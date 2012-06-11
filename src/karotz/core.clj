@@ -1,4 +1,5 @@
-(ns karotz.core)
+(ns karotz.core
+  (:require [clojure.xml :as xml]))
 
 (def karotz-api "http://api.karotz.com/api/karotz/")
 (declare sign-in sign-out login-url sign-query tag-content karotz-request fetch-id) 
@@ -12,7 +13,7 @@
 (defn karotz-request
   ([interactive-id url] (karotz-request (str url "&interactiveid=" interactive-id)))
   ([url] 
-   (let [content (clojure.xml/parse url) 
+   (let [content (xml/parse url) 
          interactive-id (fetch-id content)]
      (if (empty? interactive-id)
        content
