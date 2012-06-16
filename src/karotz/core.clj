@@ -1,8 +1,12 @@
 (ns karotz.core
+  (:gen-class :methods [#^{:static true} [doKarotz [String String String] String]])
   (:require [clojure.xml :as xml]))
 
 (def karotz-api "http://api.karotz.com/api/karotz/")
-(declare sign-in sign-out login-url sign-query tag-content karotz-request fetch-id) 
+(declare sign-in sign-out move-ears login-url sign-query tag-content karotz-request fetch-id) 
+
+(defn -doKarotz [api-key install-id secret]
+  (sign-out (move-ears (sign-in (hash-map :api-key api-key :install-id install-id :secret secret)))))
 
 (defn sign-in 
   "sign-ins to karotz with provided data. Data should be provided as map.
