@@ -1,6 +1,10 @@
 (ns karotz.test.core
   (:use [karotz.core])
-  (:use [clojure.test]))
+  (:use [clojure.test])
+  (:use [clojure.contrib.mock]))
 
-(deftest replace-me ;; FIXME: write
-  (is false "No tests have been written."))
+
+(defn should-report-failure []
+  (with-redefs [login-url (constantly "LOGIN")
+                karotz-request (constantly "")]
+     sign-in {}))
