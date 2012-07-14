@@ -1,6 +1,6 @@
 (ns karotz.core
-  (:gen-class :methods [#^{:static true} [reportFailure [String String String String String] String]
-                        #^{:static true} [reportRecovery [String String String String String] String]
+  (:gen-class :methods [#^{:static true} [reportFailure [String String String String String "[Ljava.lang.String;"] String]
+                        #^{:static true} [reportRecovery [String String String String String "[Ljava.lang.String;"] String]
                         #^{:static true} [reportBuildStart [String String String String String] String]])
   (:require [clojure.xml :as xml]))
 
@@ -32,7 +32,7 @@
  ;Thus we have to add extra pause.  
   " ... ")
 (defn tts-media-url [text]
-  (.toString (java.net.URI. "http" "translate.google.lt" "/translate_tts" (str "tl=ru&q=" tts-pause text tts-pause) nil)))
+  (.toString (java.net.URI. "http" "translate.google.lt" "/translate_tts" (str "tl=en&q=" tts-pause text tts-pause) nil)))
 
 (defn say-out-loud [text interactive-id]
   (let [media-url (tts-media-url text)]
@@ -74,25 +74,31 @@
      last-interactive-id
      (karotz-request (login-url data)))))
 
+(defn user-list [[user & others :as users]]
+  (if (empty? others) user
+    (str (apply str (interpose ", " (butlast users))) " and " (last users))))
+
 (defn report-build-state [build login-data interactive-id message]
   (let [interactive-id (sign-in login-data interactive-id)]
     (say-out-loud (str build " " message) interactive-id)))
 
-(defn report-failure [build login-data interactive-id]
-  (report-build-state build login-data interactive-id "failed. Fix it ASAP!"))
+(defn report-failure [build login-data interactive-id users]
+  (report-build-state build login-data interactive-id 
+                      (str "failed. Last change was made by " (user-list users))))
 
-(defn report-recovery [build login-data interactive-id]
-  (report-build-state build login-data interactive-id "is back to normal"))
+(defn report-recovery [build login-data interactive-id users]
+  (report-build-state build login-data interactive-id 
+                      (str "is back to normal thanks to " (user-list users))))
 
 (defn report-build-start [build login-data interactive-id]
   (let [interactive-id (sign-in login-data interactive-id)]
     (move-ears interactive-id)))
 
-(defn -reportFailure [build api-key install-id secret last-interactive-id]
+(defn -reportFailure [build api-key install-id secret last-interactive-id users]
   (let [sign-data (hash-map :api-key api-key :install-id install-id :secret secret)]
     (report-failure build sign-data last-interactive-id)))
 
-(defn -reportRecovery [build api-key install-id secret last-interactive-id]
+(defn -reportRecovery [build api-key install-id secret last-interactive-id users]
   (let [sign-data (hash-map :api-key api-key :install-id install-id :secret secret)]
     (report-recovery build sign-data last-interactive-id)))
 
