@@ -96,11 +96,11 @@
 
 (defn -reportFailure [build api-key install-id secret last-interactive-id users]
   (let [sign-data (hash-map :api-key api-key :install-id install-id :secret secret)]
-    (report-failure build sign-data last-interactive-id)))
+    (report-failure build sign-data last-interactive-id users)))
 
 (defn -reportRecovery [build api-key install-id secret last-interactive-id users]
   (let [sign-data (hash-map :api-key api-key :install-id install-id :secret secret)]
-    (report-recovery build sign-data last-interactive-id)))
+    (report-recovery build sign-data last-interactive-id users)))
 
 (defn -reportBuildStart [build api-key install-id secret last-interactive-id]
   (let [sign-data (hash-map :api-key api-key :install-id install-id :secret secret)]
