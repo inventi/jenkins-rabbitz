@@ -20,11 +20,12 @@
 (defn karotz-request
   ([interactive-id url] (karotz-request (str url "&interactiveid=" interactive-id)))
   ([url] 
-   (let [content (xml/parse (str karotz-api url)) 
+   (try (let [content (xml/parse (str karotz-api url))  
          code (tag-content :code content)]
      (if (error? code)
        code
-       (tag-content :interactiveId content)))))
+       (tag-content :interactiveId content)))
+          (catch java.io.IOException e "ERROR"))))
 
 
 (def tts-pause
