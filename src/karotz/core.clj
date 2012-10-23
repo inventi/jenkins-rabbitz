@@ -31,9 +31,9 @@
 (def tts-pause
  ;karotz cuts about 100ms from begining and 1s from end of media sound.
  ;Thus we have to add extra pause.  
-  " ... ")
+  ". This is karotz speeking.")
 (defn tts-media-url [text]
-  (.toString (java.net.URI. "http" "translate.google.lt" "/translate_tts" (str "tl=en&q=" tts-pause text tts-pause) nil)))
+  (.toString (java.net.URI. "http" "translate.google.lt" "/translate_tts" (str "tl=en&q=" text tts-pause) nil)))
 
 (defn say-out-loud [text interactive-id]
   (let [media-url (tts-media-url text)]
