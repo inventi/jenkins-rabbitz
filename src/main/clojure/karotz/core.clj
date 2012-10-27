@@ -1,8 +1,11 @@
 (ns karotz.core
-  (:gen-class :methods [#^{:static true} [reportFailure [String String String String String "[Ljava.lang.String;"] String]
-                        #^{:static true} [reportRecovery [String String String String String "[Ljava.lang.String;"] String]
-                        #^{:static true} [reportBuildStart [String String String String String] String]])
-  (:require [clojure.xml :as xml]))
+(:gen-class 
+  :name ^{Deprecated {}} lt.inventi.karotz.KarotzNotifier
+  :extends hudson.tasks.Notifier)
+  (:require [clojure.data.xml :as xml])
+  (:require [karotz.descriptor :as descriptor]))
+
+
 
 (defn tag-content [tag content]
   (first 
@@ -27,11 +30,11 @@
        (tag-content :interactiveId content)))
           (catch java.io.IOException e "ERROR"))))
 
-
 (def tts-pause
  ;karotz cuts about 100ms from begining and 1s from end of media sound.
  ;Thus we have to add extra pause.  
   ". This is karotz speeking.")
+
 (defn tts-media-url [text]
   (.toString (java.net.URI. "http" "translate.google.lt" "/translate_tts" (str "tl=en&q=" text tts-pause) nil)))
 
@@ -106,3 +109,7 @@
 (defn -reportBuildStart [build api-key install-id secret last-interactive-id]
   (let [sign-data (hash-map :api-key api-key :install-id install-id :secret secret)]
     (report-build-start build sign-data last-interactive-id)))
+
+(defn -getRequiredMonitorService [this]
+  (hudson.tasks.BuildStepMonitor/STEP))
+
