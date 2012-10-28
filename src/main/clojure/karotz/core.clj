@@ -1,11 +1,10 @@
 (ns karotz.core
 (:gen-class 
-  :name ^{Deprecated {}} lt.inventi.karotz.KarotzNotifier
-  :extends hudson.tasks.Notifier)
-  (:require [clojure.data.xml :as xml])
-  (:require [karotz.descriptor :as descriptor]))
+  :name "lt.inventi.karotz.KarotzClojureReporter"
+  :implements [lt.inventi.karotz.KarotzReporter])
+  (:require [clojure.xml :as xml]))
 
-
+(import java.util.logging.Level)
 
 (defn tag-content [tag content]
   (first 
@@ -33,7 +32,7 @@
 (def tts-pause
  ;karotz cuts about 100ms from begining and 1s from end of media sound.
  ;Thus we have to add extra pause.  
-  ". This is karotz speeking.")
+  ". Karotz speeking")
 
 (defn tts-media-url [text]
   (.toString (java.net.URI. "http" "translate.google.lt" "/translate_tts" (str "tl=en&q=" text tts-pause) nil)))
@@ -70,46 +69,67 @@
 
 (defn sign-in 
   "sign-ins to karotz with provided data. Data should be provided as map.
-  {:api-key <api-key> :install-id <install-id> :secret <secret>}"
+  {:api-key <api-key> :install-id <install-id> :secret <secret> :interactive-id <last known interactive id>}"
   ([data]
-   (sign-in data nil))
-  ([data last-interactive-id]
-   (if (valid-id? last-interactive-id)
-     last-interactive-id
+   (if (valid-id? (:interactive-id data))
+     (:interactive-id data)
      (karotz-request (login-url data)))))
+
 
 (defn user-list [[user & others :as users]]
   (if (empty? others) user
     (str (apply str (interpose ", " (butlast users))) " and " (last users))))
 
-(defn report-build-state [build login-data interactive-id message]
-  (let [interactive-id (sign-in login-data interactive-id)]
-    (say-out-loud (str build " " message) interactive-id)))
+(defn commiters-list [build]
+  (user-list (map #(.getId (.getAuthor %)) (.getChangeSet build))))
 
-(defn report-failure [build login-data interactive-id users]
-  (report-build-state build login-data interactive-id 
-                      (str "failed. Last change was made by " (user-list users))))
+(defn report-build-state [build-data message]
+    (say-out-loud (str (:name build-data) " " message) (sign-in build-data)))
 
-(defn report-recovery [build login-data interactive-id users]
-  (report-build-state build login-data interactive-id 
-                      (str "is back to normal thanks to " (user-list users))))
+(defn report-failure [build-data build]
+  (report-build-state build-data 
+                      (str "failed. Last change was made by " (commiters-list build))))
 
-(defn report-build-start [build login-data interactive-id]
-  (let [interactive-id (sign-in login-data interactive-id)]
-    (move-ears interactive-id)))
+(defn report-recovery [build-data build]
+  (report-build-state build-data 
+                      (str "is back to normal thanks to " (commiters-list build))))
 
-(defn -reportFailure [build api-key install-id secret last-interactive-id users]
-  (let [sign-data (hash-map :api-key api-key :install-id install-id :secret secret)]
-    (report-failure build sign-data last-interactive-id users)))
+(defn map-build-data [build descriptor]
+  (hash-map :api-key (.getApiKey descriptor) 
+            :install-id (.getInstallationId descriptor) 
+            :secret (.getSecretKey descriptor)
+            :interactive-id (.getInteractiveId descriptor)
+            :name (.getName (.getProject build))))
 
-(defn -reportRecovery [build api-key install-id secret last-interactive-id users]
-  (let [sign-data (hash-map :api-key api-key :install-id install-id :secret secret)]
-    (report-recovery build sign-data last-interactive-id users)))
+(defn failed? [build]
+  (= (.getResult build) hudson.model.Result/FAILURE))
 
-(defn -reportBuildStart [build api-key install-id secret last-interactive-id]
-  (let [sign-data (hash-map :api-key api-key :install-id install-id :secret secret)]
-    (report-build-start build sign-data last-interactive-id)))
+(defn succeed? [build]
+  (= (.getResult build) hudson.model.Result/SUCCESS))
 
-(defn -getRequiredMonitorService [this]
-  (hudson.tasks.BuildStepMonitor/STEP))
+(defn recovered? [this-build]
+  (let [prev-build (.getPreviousBuild this-build)]
+    (if (nil? prev-build)
+      false
+      (and (succeed? this-build) (failed? prev-build)))))
+
+(def logger (java.util.logging.Logger/getLogger "lt.inventi.karotz.KarotzNotifier"))
+
+(defn -prebuild [this build descriptor]
+  (let [build-data (map-build-data build descriptor)]
+  (do 
+    (.log logger Level/INFO (str "reporting build start " (:name build-data))) 
+    (move-ears (sign-in build-data)))))
+
+(defn -perform [this build descriptor]
+  (let [build-data (map-build-data build descriptor)]
+    (if (failed? build)
+      (do 
+        (.log logger Level/INFO (str "reporting build failure " (:name build-data))) 
+        (report-failure build-data build))
+      (if (recovered? build)
+        (do 
+          (.log logger Level/INFO (str "reporting build recovery " (:name build-data)))
+          (report-recovery build-data build))
+        (:interactive-id build-data)))))
 
