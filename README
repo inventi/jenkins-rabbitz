@@ -1,5 +1,5 @@
 # karotz
 
-Inventi Karotz API
+Karotz plugin for jenkins. Uses Google TTS to form a message and sends it to Karotz.
 
 
