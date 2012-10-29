@@ -2,9 +2,8 @@
 (:gen-class 
   :name "lt.inventi.karotz.KarotzClojureReporter"
   :implements [lt.inventi.karotz.KarotzReporter])
-  (:require [clojure.xml :as xml]))
-
-(import java.util.logging.Level)
+  (:require [clojure.xml :as xml])
+  (:use [clojure.contrib.logging :only (info)]))
 
 (defn tag-content [tag content]
   (first 
@@ -101,11 +100,12 @@
             :interactive-id (.getInteractiveId descriptor)
             :name (.getName (.getProject build))))
 
+(import hudson.model.Result)
 (defn failed? [build]
-  (= (.getResult build) hudson.model.Result/FAILURE))
+  (= (.getResult build) Result/FAILURE))
 
 (defn succeed? [build]
-  (= (.getResult build) hudson.model.Result/SUCCESS))
+  (= (.getResult build) Result/SUCCESS))
 
 (defn recovered? [this-build]
   (let [prev-build (.getPreviousBuild this-build)]
@@ -113,23 +113,23 @@
       false
       (and (succeed? this-build) (failed? prev-build)))))
 
-(def logger (java.util.logging.Logger/getLogger "lt.inventi.karotz.KarotzNotifier"))
-
 (defn -prebuild [this build descriptor]
-  (let [build-data (map-build-data build descriptor)]
+  (let [build-data (map-build-data build descriptor)
+        build-name (:name build-data)]
   (do 
-    (.log logger Level/INFO (str "reporting build start " (:name build-data))) 
+    (info (str "reporting build start " build-name)) 
     (move-ears (sign-in build-data)))))
 
 (defn -perform [this build descriptor]
-  (let [build-data (map-build-data build descriptor)]
+  (let [build-data (map-build-data build descriptor)
+        build-name (:name build-data)]
     (if (failed? build)
       (do 
-        (.log logger Level/INFO (str "reporting build failure " (:name build-data))) 
+        (info (str "reporting build failure " build-name)) 
         (report-failure build-data build))
       (if (recovered? build)
         (do 
-          (.log logger Level/INFO (str "reporting build recovery " (:name build-data)))
+          (info (str "reporting build recovery " build-name))
           (report-recovery build-data build))
         (:interactive-id build-data)))))
 
