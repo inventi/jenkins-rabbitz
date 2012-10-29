@@ -21,7 +21,7 @@ import org.kohsuke.stapler.StaplerRequest;
 
 public class KarotzNotifier extends Notifier {
 
-	private transient KarotzReporter delegatee;
+	private transient KarotzReporter reporter;
 	
 	private static final Logger log = Logger.getLogger(KarotzNotifier.class.getName());
 
@@ -36,7 +36,7 @@ public class KarotzNotifier extends Notifier {
 	@Override
 	public boolean prebuild(AbstractBuild<?, ?> build, BuildListener listener) {
 		KarotzDescriptor descriptor = (KarotzDescriptor)getDescriptor();
-		descriptor.interactiveId = delegatee().prebuild(build, descriptor);
+		descriptor.interactiveId = reporter().prebuild(build, descriptor);
 		log.log(Level.INFO, "prebuild: saving descriptor "+descriptor.interactiveId);
 		descriptor.save();
 		return true;
@@ -46,14 +46,14 @@ public class KarotzNotifier extends Notifier {
 	public boolean perform(AbstractBuild<?, ?> build, Launcher launcher,
 			BuildListener listener) throws InterruptedException, IOException {
 		KarotzDescriptor descriptor = (KarotzDescriptor)getDescriptor();
-		descriptor.interactiveId = delegatee().perform(build, descriptor);
+		descriptor.interactiveId = reporter().perform(build, descriptor);
 		log.log(Level.INFO, "preform: saving descriptor "+descriptor.interactiveId);
 		descriptor.save();
 		return true;
 	}
 	
-	private KarotzReporter delegatee() {
-		if (delegatee == null) {
+	private KarotzReporter reporter() {
+		if (reporter == null) {
 			try {
 				Thread.currentThread().setContextClassLoader(
 						KarotzNotifier.class.getClassLoader());
@@ -61,7 +61,7 @@ public class KarotzNotifier extends Notifier {
 				Class<KarotzReporter> notifier = (Class<KarotzReporter>) KarotzNotifier.class
 						.forName("lt.inventi.karotz.KarotzClojureReporter");
 
-				delegatee = notifier.newInstance();
+				reporter = notifier.newInstance();
 
 			} catch (ClassNotFoundException e) {
 				throw new RuntimeException(e);
@@ -71,7 +71,7 @@ public class KarotzNotifier extends Notifier {
 				throw new RuntimeException(e);
 			}
 		}
-		return delegatee;
+		return reporter;
 	}
 
 	@Extension
@@ -85,14 +85,6 @@ public class KarotzNotifier extends Notifier {
 		private String secretKey;
 
 		private String interactiveId;
-
-		public String getInteractiveId() {
-			return interactiveId;
-		}
-
-		public void setInteractiveId(String interactiveId) {
-			this.interactiveId = interactiveId;
-		}
 
 		public KarotzDescriptor() {
 			load();
@@ -132,6 +124,10 @@ public class KarotzNotifier extends Notifier {
 
 		public String getSecretKey() {
 			return secretKey;
+		}
+		
+		public String getInteractiveId() {
+			return interactiveId;
 		}
 	}
 }
