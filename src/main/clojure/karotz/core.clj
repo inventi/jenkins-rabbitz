@@ -3,7 +3,10 @@
   :name "lt.inventi.karotz.KarotzClojureReporter"
   :implements [lt.inventi.karotz.KarotzReporter])
   (:require [clojure.xml :as xml])
-  (:use [clojure.contrib.logging :only (info)]))
+  (:require [clojure.java.io :as io])
+  (:use [clojure.contrib.logging :only (info)])
+  (:import (javax.sound.sampled AudioSystem AudioFormat AudioFormat$Encoding AudioFileFormat$Type AudioInputStream))
+  (:import (java.io SequenceInputStream ByteArrayOutputStream)))
 
 (defn tag-content [tag content]
   (first 
@@ -28,16 +31,72 @@
        (tag-content :interactiveId content)))
           (catch java.io.IOException e "ERROR"))))
 
-(def tts-pause
- ;karotz cuts about 100ms from begining and 1s from end of media sound.
- ;Thus we have to add extra pause.  
-  ". Karotz rabbid")
-
 (defn tts-media-url [text]
-  (.toString (java.net.URI. "http" "translate.google.lt" "/translate_tts" (str "tl=en&q=" text tts-pause) nil)))
+  (java.net.URI. "http" "translate.google.lt" "/translate_tts" (str "tl=en&q=" text) nil))
 
-(defn say-out-loud [text interactive-id]
-  (let [media-url (tts-media-url text)]
+
+(defn tts-stream [tts-text] 
+  (let [con (.. (tts-media-url tts-text) toURL openConnection)]
+   (do (.. con (setRequestProperty "User-Agent" "Mozilla/5.0 ( compatible ) "))
+     (.. con getInputStream))))
+
+
+(defn audio-input-stream 
+  ([stream] 
+    (AudioSystem/getAudioInputStream stream))
+  ([stream format]
+    (AudioSystem/getAudioInputStream format stream)))
+
+
+(defn decode-mp3 [stream]
+  (let [format (.getFormat stream)
+        encoding AudioFormat$Encoding/PCM_SIGNED
+        sample-rate (.getSampleRate format)
+        bitrate 16
+        channels (.getChannels format)
+        frame-size (* 2 channels)
+        frame-rate sample-rate
+        big-endian false]
+    (audio-input-stream stream
+      (AudioFormat.
+        encoding sample-rate bitrate channels frame-size frame-rate big-endian))))
+
+
+(defn write-wav [audio-stream out-file]
+    (AudioSystem/write audio-stream AudioFileFormat$Type/WAVE (io/file out-file)))
+          
+(defn join-stream [stream1 stream2]
+  (AudioInputStream. 
+    (SequenceInputStream. stream1 stream2)
+    (.getFormat stream1)
+    (+ (.getFrameLength stream1) (.getFrameLength stream2))))
+
+
+(defn tts-to-file [tts-text location]
+;karotz cuts about 100ms from begining and 1s from end of media sound.
+;Thus we have to add extra pause.  
+(with-open 
+  [silence (audio-input-stream (io/resource "silence.wav"))
+   tts-mp3 (audio-input-stream (tts-stream tts-text))]
+  (do
+	  (write-wav (decode-mp3 tts-mp3) (io/file location "tts.wav"))
+	  (with-open 
+	    [tts-wav (audio-input-stream (io/file location "tts.wav"))
+	     joined (join-stream tts-wav silence)]
+	    (write-wav joined (str location "/build-tts.wav"))))))
+
+
+(defn tts-media [text build]
+  (do 
+    (tts-to-file text (io/file (.. build getWorkspace toURI)))
+      (str 
+	       (.. (jenkins.model.Jenkins/getInstance) getRootUrl)
+	       (.. build getProject getUrl) 
+	       "ws/build-tts.wav")))
+
+
+(defn say-out-loud [text interactive-id build]
+  (let [media-url (tts-media text build)]
     (karotz-request interactive-id (str "multimedia?action=play&url=" (java.net.URLEncoder/encode media-url)))))
 
 (defn move-ears [interactive-id]
@@ -82,11 +141,12 @@
 (defn commiters-list [build]
   (user-list (map #(.getId (.getAuthor %)) (.getChangeSet build))))
 
-(defn report-build-state [build-data message]
-    (say-out-loud (str (:name build-data) " " message) (sign-in build-data)))
+(defn report-build-state [build-data build message]
+    (say-out-loud (str (:name build-data) " " message) (sign-in build-data) build))
 
 (defn report-failure [build-data build]
   (report-build-state build-data 
+                      build
                       (str "failed. Last change was made by " (commiters-list build))))
 
 (defn report-recovery [build-data build]
