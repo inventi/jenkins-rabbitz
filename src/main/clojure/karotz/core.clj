@@ -150,7 +150,8 @@
                       (str "failed. Last change was made by " (commiters-list build))))
 
 (defn report-recovery [build-data build]
-  (report-build-state build-data 
+  (report-build-state build-data
+                      build
                       (str "is back to normal thanks to " (commiters-list build))))
 
 (defn map-build-data [build descriptor]
