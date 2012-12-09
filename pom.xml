@@ -11,14 +11,10 @@
   <version>1.0-SNAPSHOT</version>
   <packaging>hpi</packaging>
   
+  <!-- user clojure:nailgun to start nailgun -->
   <properties>
-    <!-- Builds will use this release version of Clojure, may be
-         overridden in projects or at the command line. -->
     <clojure.version>1.4.0</clojure.version>
-    <!-- By default, do not enable *warn-on-reflection*, may be
-	 overridden in projects at the command line. -->
     <clojure.warnOnReflection>false</clojure.warnOnReflection>
-
     <clojure.source.dir>src/main/clojure</clojure.source.dir>
     <clojure.testSource.dir>src/test/clojure</clojure.testSource.dir>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -166,21 +162,21 @@
   </dependencies>
   <!-- get every artifact through repo.jenkins-ci.org, which proxies all the artifacts that we need -->
   <repositories>
-    <repository>
-      <id>repo.jenkins-ci.org</id>
-      <url>http://repo.jenkins-ci.org/public/</url>
-    </repository>
-    <repository>
-    <id>clojars</id>
-    <name>Clojars</name>
-    <url>http://clojars.org/repo/</url>
-</repository>
+	  <repository>
+		  <id>repo.jenkins-ci.org</id>
+		  <url>http://repo.jenkins-ci.org/public/</url>
+	  </repository>
+	  <repository>
+		  <id>clojars</id>
+		  <name>Clojars</name>
+		  <url>http://clojars.org/repo/</url>
+	  </repository>
   </repositories>
 
   <pluginRepositories>
-    <pluginRepository>
-      <id>repo.jenkins-ci.org</id>
-      <url>http://repo.jenkins-ci.org/public/</url>
-    </pluginRepository>
+	  <pluginRepository>
+		  <id>repo.jenkins-ci.org</id>
+		  <url>http://repo.jenkins-ci.org/public/</url>
+	  </pluginRepository>
   </pluginRepositories>
 </project>
