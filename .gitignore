@@ -12,3 +12,5 @@
 .DS_Store
 target
 work
+*.iml
+.idea
