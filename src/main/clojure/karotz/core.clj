@@ -133,10 +133,11 @@
      (:interactive-id data)
      (karotz-request (login-url data)))))
 
-
-(defn user-list [[user & others :as users]]
-  (if (empty? others) user
-    (str (apply str (interpose ", " (butlast users))) " and " (last users))))
+(defn user-list [user-list]
+  (let [users (set user-list)]
+    (if (< (count users) 2) 
+      (first users)
+      (str (apply str (interpose ", " (butlast users))) " and " (last users)))))
 
 (defn commiters-list [build]
   (user-list (map #(.getId (.getAuthor %)) (.getChangeSet build))))
@@ -144,15 +145,19 @@
 (defn report-build-state [build-data build message]
     (say-out-loud (str (:name build-data) " " message) (sign-in build-data) build))
 
+(defn prepare-message [message commiters-message commiter-names]
+  (str message (if (empty? commiter-names) ""
+                 (str " " commiters-message " " commiter-names))))
+  
 (defn report-failure [build-data build]
-  (report-build-state build-data 
-                      build
-                      (str "failed. Last change was made by " (commiters-list build))))
+  (report-build-state build-data build
+                      (prepare-message "failed." "Last change was made by" 
+                                       (commiters-list build))))
 
 (defn report-recovery [build-data build]
-  (report-build-state build-data
-                      build
-                      (str "is back to normal thanks to " (commiters-list build))))
+  (report-build-state build-data build
+                      (prepare-message "is back to normal." "Thanks to" 
+                                       (commiters-list build))))
 
 (defn map-build-data [build descriptor]
   (hash-map :api-key (.getApiKey descriptor) 
