@@ -22,7 +22,14 @@
 (def karotz-api "http://api.karotz.com/api/karotz/")
 
 (defn karotz-request
-  ([interactive-id url] (karotz-request (str url "&interactiveid=" interactive-id)))
+  ([interactive-ids url]
+    (loop [ids interactive-ids result {}]
+      (if (empty? ids)
+        result
+        (let [[installation-id interactive-id] (first ids)
+              request (karotz-request (str url "&interactiveid=" interactive-id))]
+            (recur (rest ids) (assoc result installation-id request))))))
+  
   ([url] 
    (try (let [content (xml/parse (str karotz-api url))  
          code (tag-content :code content)]
@@ -86,11 +93,13 @@
 	    (write-wav joined (str location "/build-tts.wav"))))))
 
 
+(def jenkins (jenkins.model.Jenkins/getInstance))
+
 (defn tts-media [text build]
   (do 
     (tts-to-file text (io/file (.. build getWorkspace toURI)))
       (str 
-	       (.. (jenkins.model.Jenkins/getInstance) getRootUrl)
+	       (.getRootUrl jenkins)
 	       (.. build getProject getUrl) 
 	       "ws/build-tts.wav")))
 
@@ -113,25 +122,34 @@
                  (.init mac (javax.crypto.spec.SecretKeySpec. (.getBytes secret) "HmacSHA1"))
                  (.doFinal mac (.getBytes query))))) "ASCII"))
 
-(defn login-url [data]
+(defn login-url [data installid]
     (let [query (str "apikey=" (data :api-key) 
-                     "&installid=" (data :install-id) 
+                     "&installid=" installid 
                      "&once=" (str (.nextInt (java.util.Random.) 99999999)) 
                      "&timestamp=" (long (/ (System/currentTimeMillis) 1000)))]
       (str "start?" query "&signature=" (java.net.URLEncoder/encode (sign-query query (data :secret)) "utf8"))))
 
 (defn valid-id? [interactive-id]
-  (if (boolean interactive-id)
-    (let [response (karotz-request interactive-id "ears?left=10&right=-10&relative=true")]
-      (not (error? response)))))
+    (let [[installation-id response] (first (karotz-request interactive-id "ears?left=10&right=-10&relative=true"))]
+      (not (error? response))))
 
 (defn sign-in 
   "sign-ins to karotz with provided data. Data should be provided as map.
-  {:api-key <api-key> :install-id <install-id> :secret <secret> :interactive-id <last known interactive id>}"
+  {:api-key <api-key> :secret <secret> :interactive-ids {<installation-id> <last known interactive id>}}"
   ([data]
-   (if (valid-id? (:interactive-id data))
-     (:interactive-id data)
-     (karotz-request (login-url data)))))
+    (loop [ids (:interactive-ids data) result {}]
+      (if (empty? ids)
+        result
+        (let [[installation-id interactive-id] (first ids)
+              sign-in-result (sign-in installation-id interactive-id data)]
+          (recur (rest ids) 
+                 (merge result sign-in-result))))))
+  
+  ([installation-id interactive-id data]
+    (if (valid-id? {installation-id interactive-id})
+        {installation-id interactive-id}
+        (let [new-id (karotz-request (login-url data installation-id))]
+          {installation-id new-id}))))
 
 (defn user-list [user-list]
   (let [users (set user-list)]
@@ -161,9 +179,8 @@
 
 (defn map-build-data [build descriptor]
   (hash-map :api-key (.getApiKey descriptor) 
-            :install-id (.getInstallationId descriptor) 
             :secret (.getSecretKey descriptor)
-            :interactive-id (.getInteractiveId descriptor)
+            :interactive-ids (.getInteractiveIds descriptor)
             :name (.getName (.getProject build))))
 
 (import hudson.model.Result)

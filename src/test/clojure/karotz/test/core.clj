@@ -1,6 +1,8 @@
 (ns karotz.test.core
   (:use [karotz.core])
-  (:use [clojure.test]))
+  (:use [clojure.test])
+  (:require [clojure.xml :as xml])
+  (:import (lt.inventi.karotz Mock$Build Mock$Descriptor Mock$Jenkins)))
 
 (deftest test-error 
          (testing "Should test error"
@@ -43,16 +45,42 @@
                   (with-redefs [commiters-list (constantly nil)]
                     (report-recovery nil nil)))))))
                                 
-                                
-(deftest test-sign-in
-         (testing "Signin should return valid id"
-                  (is (= "12345"
-                         (with-redefs [valid-id? (constantly true)]
-                                      (sign-in {:interactive-id "12345"}))))
-                  (is (= "new-id"
-                         (with-redefs [valid-id? (constantly false)
-                                       karotz-request (constantly "new-id")]
-                                      (sign-in {:interactive-id "old-id" :secret "123"}))))))
+(deftest test-sign-in                           
+   (testing "Signin should return valid id"
+            (is (= {"install1" "123", "install2" "456"}
+                   (with-redefs [valid-id? (constantly true)]
+                     (sign-in {:interactive-ids {"install1" "123", "install2" "456"}}))))))
+
+
+(deftest test-karotz-request
+(with-redefs [karotz-api ""]
+  (testing "Parses correct response"
+	  (is (= "INTERACTIVE-ID" 
+	         (karotz-request "src/test/resources/ok-response.xml"))))
+  
+  (testing "Parses erroneus response"
+	  (is (= "NOT_CONNECTED" 
+	         (karotz-request "src/test/resources/error-response.xml"))))
+  
+  (testing "Returns error on io exception"
+	  (is (= "ERROR" 
+	         (karotz-request "no-such-file"))))
+  
+  (testing "Appends interactive id"
+           (is (= {"installation1" "INTERACTIVE-ID-WITH-PARAM", "installation2" "INTERACTIVE-ID-WITH-PARAM"}   
+	         (karotz-request {"installation1" "INTERACTIVE-ID", "installation2" "INTERACTIVE-ID"} "src/test/resources/ok-response.xml"))))))
+
+(deftest acceptance-test
+  (with-redefs [karotz-request (constantly {"INSTALLATION" "INTERACTIVE-ID"})
+                jenkins (Mock$Jenkins.)
+                tts-media (constantly "MEDIA-URL")]
+    (testing "Perform should work"
+             (is (= {"INSTALLATION" "INTERACTIVE-ID"} 
+                    (-perform nil (Mock$Build.) (Mock$Descriptor.)))))
+    (testing "Prebuild should work"
+             (is (= {"INSTALLATION" "INTERACTIVE-ID"} 
+                    (-prebuild nil (Mock$Build.) (Mock$Descriptor.)))))))
 
 
 
+                

@@ -11,9 +11,14 @@ import hudson.tasks.Notifier;
 import hudson.tasks.Publisher;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
 import org.kohsuke.stapler.DataBoundConstructor;
@@ -36,8 +41,8 @@ public class KarotzNotifier extends Notifier {
 	@Override
 	public boolean prebuild(AbstractBuild<?, ?> build, BuildListener listener) {
 		KarotzDescriptor descriptor = (KarotzDescriptor)getDescriptor();
-		descriptor.interactiveId = reporter().prebuild(build, descriptor);
-		log.log(Level.INFO, "prebuild: saving descriptor "+descriptor.interactiveId);
+		descriptor.interactiveIds = reporter().prebuild(build, descriptor);
+		log.log(Level.INFO, "prebuild: saving descriptor "+descriptor.interactiveIds);
 		descriptor.save();
 		return true;
 	}
@@ -46,8 +51,8 @@ public class KarotzNotifier extends Notifier {
 	public boolean perform(AbstractBuild<?, ?> build, Launcher launcher,
 			BuildListener listener) throws InterruptedException, IOException {
 		KarotzDescriptor descriptor = (KarotzDescriptor)getDescriptor();
-		descriptor.interactiveId = reporter().perform(build, descriptor);
-		log.log(Level.INFO, "preform: saving descriptor "+descriptor.interactiveId);
+		descriptor.interactiveIds = reporter().perform(build, descriptor);
+		log.log(Level.INFO, "preform: saving descriptor "+descriptor.interactiveIds);
 		descriptor.save();
 		return true;
 	}
@@ -80,11 +85,11 @@ public class KarotzNotifier extends Notifier {
 
 		private String apiKey;
 
-		private String installationId;
+		private List<String> installations;
 
 		private String secretKey;
 
-		private String interactiveId;
+		private Map<String, String> interactiveIds;
 
 		public KarotzDescriptor() {
 			load();
@@ -107,7 +112,15 @@ public class KarotzNotifier extends Notifier {
 		public boolean configure(StaplerRequest req, JSONObject formData)
 				throws FormException {
 			apiKey = formData.getString("apiKey");
-			installationId = formData.getString("installationId");
+			installations = new ArrayList<String>();
+			if(formData.get("installId") instanceof JSONArray){
+				JSONArray installs = formData.getJSONArray("installId");
+				for(Object obj : installs){
+					installations.add(((JSONObject)obj).getString("id"));
+				}
+			}else{
+				installations.add(formData.getJSONObject("installId").getString("id"));
+			}
 			secretKey = formData.getString("secretKey");
 			save();
 
@@ -118,16 +131,22 @@ public class KarotzNotifier extends Notifier {
 			return apiKey;
 		}
 
-		public String getInstallationId() {
-			return installationId;
+		public List<String> getInstallations() {
+			return installations;
 		}
 
 		public String getSecretKey() {
 			return secretKey;
 		}
 		
-		public String getInteractiveId() {
-			return interactiveId;
+		public Map<String, String> getInteractiveIds() {
+			if(interactiveIds == null){
+				interactiveIds = new HashMap<String, String>();
+				for(String id : installations){
+					interactiveIds.put(id, "");
+				}
+			}
+			return interactiveIds;
 		}
 	}
 }
