@@ -1,4 +1,4 @@
-# Jenkins Karotz plugin
+# Jenkins Karotz :rabbit: plugin 
 
 This is Karotz plugin for Jenkins. It just reports build failures to Karotz rabbit.
 
