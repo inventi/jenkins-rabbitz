@@ -199,20 +199,14 @@
 (defn -prebuild [this build descriptor]
   (let [build-data (map-build-data build descriptor)
         build-name (:name build-data)]
-  (do 
-    (info (str "reporting build start " build-name)) 
-    (move-ears (sign-in build-data)))))
+    (move-ears (sign-in build-data))))
 
 (defn -perform [this build descriptor]
   (let [build-data (map-build-data build descriptor)
         build-name (:name build-data)]
     (if (failed? build)
-      (do 
-        (info (str "reporting build failure " build-name)) 
-        (report-failure build-data build))
+        (report-failure build-data build)
       (if (recovered? build)
-        (do 
-          (info (str "reporting build recovery " build-name))
-          (report-recovery build-data build))
-        (:interactive-id build-data)))))
+          (report-recovery build-data build)
+        (:interactive-ids build-data)))))
 
