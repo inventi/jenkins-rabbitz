@@ -17,7 +17,9 @@
 (def fail-codes #{"ERROR", "NOT_CONNECTED"})
 
 (defn error? [code]
-  (contains? fail-codes code))
+  (if (nil? code)
+    false
+    (reduce #(or %1 %2) (map #(< -1 (.indexOf code %)) fail-codes))))
 
 (def karotz-api "http://api.karotz.com/api/karotz/")
 
@@ -36,7 +38,7 @@
      (if (error? code)
        code
        (tag-content :interactiveId content)))
-          (catch java.io.IOException e "ERROR"))))
+          (catch java.io.IOException e (str "ERROR " e)))))
 
 (defn tts-media-url [text]
   (java.net.URI. "http" "translate.google.lt" "/translate_tts" (str "tl=en&q=" text) nil))
@@ -142,14 +144,13 @@
         result
         (let [[installation-id interactive-id] (first ids)
               sign-in-result (sign-in installation-id interactive-id data)]
-          (recur (rest ids) 
-                 (merge result sign-in-result))))))
+          (recur (rest ids) (assoc result installation-id sign-in-result))))))
   
   ([installation-id interactive-id data]
     (if (valid-id? {installation-id interactive-id})
-        {installation-id interactive-id}
+        interactive-id
         (let [new-id (karotz-request (login-url data installation-id))]
-          {installation-id new-id}))))
+          new-id))))
 
 (defn user-list [user-list]
   (let [users (set user-list)]
@@ -209,4 +210,3 @@
       (if (recovered? build)
           (report-recovery build-data build)
         (:interactive-ids build-data)))))
-

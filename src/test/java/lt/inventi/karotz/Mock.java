@@ -32,7 +32,8 @@ public class Mock {
 
 		public Map<String, String> getInteractiveIds() {
 			Map<String, String> map = new HashMap<String, String>();
-			map.put("INSTALLATION", "INTERACTIVE-ID");
+			map.put("INSTALLATION1", "INTERACTIVE-ID1");
+			map.put("INSTALLATION2", "INTERACTIVE-ID2");
 			return map;
 		}
 	}

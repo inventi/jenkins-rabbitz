@@ -6,8 +6,11 @@
 
 (deftest test-error 
          (testing "Should test error"
+                  (is (error? "ERROR some other text"))
+                  (is (error? "NOT_CONNECTED some other text"))
+                  (is (error? "NOT_CONNECTED"))
                   (is (error? "ERROR"))
-                  (is (error? "NOT_CONNECTED"))))
+                  (is (not (error? nil)))))
 
 (deftest test-user-list 
          (testing "Forms names list message"
@@ -47,8 +50,10 @@
                                 
 (deftest test-sign-in                           
    (testing "Signin should return valid id"
-            (is (= {"install1" "123", "install2" "456"}
-                   (with-redefs [valid-id? (constantly true)]
+            (is (= {"install1" "123", "install2" "789"}
+                   (with-redefs [valid-id? (fn [id] (= id {"install1" "123"}))
+                                 karotz-request (constantly "789")
+                                 login-url (constantly "")]
                      (sign-in {:interactive-ids {"install1" "123", "install2" "456"}}))))))
 
 
@@ -62,25 +67,30 @@
 	  (is (= "NOT_CONNECTED" 
 	         (karotz-request "src/test/resources/error-response.xml"))))
   
-  (testing "Returns error on io exception"
-	  (is (= "ERROR" 
-	         (karotz-request "no-such-file"))))
+  (testing "Returns io exception if it occurs"
+	  (is (= "ERROR java.io.IOException: problem"
+           (with-redefs [xml/parse (fn [a] (throw (java.io.IOException. "problem")))]
+             (karotz-request "no-such-file")))))
+
+  (testing "Merges correclty ids"
+      (is (= {"install1" "ERROR", "install2" "455"}
+           (with-redefs [xml/parse (fn [url] (if (= url "&interactiveid=456") "455" "ERROR"))
+                         tag-content (fn [tag content] (identity content))]
+             (karotz-request {"install1" "123" "install2" "456"} "")))))
   
   (testing "Appends interactive id"
            (is (= {"installation1" "INTERACTIVE-ID-WITH-PARAM", "installation2" "INTERACTIVE-ID-WITH-PARAM"}   
 	         (karotz-request {"installation1" "INTERACTIVE-ID", "installation2" "INTERACTIVE-ID"} "src/test/resources/ok-response.xml"))))))
 
 (deftest acceptance-test
-  (with-redefs [karotz-request (constantly {"INSTALLATION" "INTERACTIVE-ID"})
+  (with-redefs [xml/parse (fn [url] (if (< -1 (.indexOf url "INTERACTIVE-ID1")) "INTERACTIVE-ID1" "INTERACTIVE-ID2"))
+                tag-content (fn [tag content] (identity content))
                 jenkins (Mock$Jenkins.)
-                tts-media (constantly "MEDIA-URL")]
+                tts-media (constantly "MEDIA-URL")
+                karotz-api ""]
     (testing "Perform should work"
-             (is (= {"INSTALLATION" "INTERACTIVE-ID"} 
+             (is (= {"INSTALLATION1" "INTERACTIVE-ID1", "INSTALLATION2" "INTERACTIVE-ID2"}
                     (-perform nil (Mock$Build.) (Mock$Descriptor.)))))
     (testing "Prebuild should work"
-             (is (= {"INSTALLATION" "INTERACTIVE-ID"} 
+             (is (= {"INSTALLATION1" "INTERACTIVE-ID1", "INSTALLATION2" "INTERACTIVE-ID2"}
                     (-prebuild nil (Mock$Build.) (Mock$Descriptor.)))))))
-
-
-
-                
