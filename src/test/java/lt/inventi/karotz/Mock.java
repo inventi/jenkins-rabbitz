@@ -13,10 +13,9 @@ import java.util.Map;
 
 public class Mock {
 	
-	public static class Jenkins {
-		
+	public static class Jenkins {		
 		public String getRootUrl(){
-			return "aaa";
+			return "http://";
 		}
 	}
 	
@@ -29,12 +28,41 @@ public class Mock {
 		public String getSecretKey() {
 			return "SECRET-KEY";
 		}
+		
+		public List<String> getInstallations() {
+			List<String> list= new ArrayList<String>();
+			list.add("INSTALLATION1");
+			list.add("INSTALLATION2");
+			return list;
+		}
 
-		public Map<String, String> getInteractiveIds() {
-			Map<String, String> map = new HashMap<String, String>();
-			map.put("INSTALLATION1", "INTERACTIVE-ID1");
-			map.put("INSTALLATION2", "INTERACTIVE-ID2");
-			return map;
+		public List<String> getTokenIds() {
+			List<String> list= new ArrayList<String>();
+			list.add("INTERACTIVE-ID1");
+			list.add("INTERACTIVE-ID2");
+			return list;
+		}
+	}
+	
+	public static class EmptyDescriptor {
+		
+		public String getApiKey() {
+			return "API-KEY";
+		}
+
+		public String getSecretKey() {
+			return "SECRET-KEY";
+		}
+		
+		public List<String> getInstallations() {
+			List<String> list= new ArrayList<String>();
+			list.add("INSTALLATION1");
+			list.add("INSTALLATION2");
+			return list;
+		}
+
+		public List<String> getTokenIds() {
+			return new ArrayList<String>();
 		}
 	}
 	
@@ -73,12 +101,12 @@ public class Mock {
 			return new File("./target").toURI();
 		}
 		
-		public URL getUrl(){
-			try {
-				return new File("./target").toURI().toURL();
-			} catch (MalformedURLException e) {
-				throw new RuntimeException(e);
-			}
+		public String getUrl(){
+			return "project";
+		}
+		
+		public Build getPreviousBuild(){
+			return this;
 		}
 	}
 

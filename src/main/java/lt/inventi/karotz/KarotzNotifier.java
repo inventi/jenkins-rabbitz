@@ -12,9 +12,7 @@ import hudson.tasks.Publisher;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -41,8 +39,8 @@ public class KarotzNotifier extends Notifier {
 	@Override
 	public boolean prebuild(AbstractBuild<?, ?> build, BuildListener listener) {
 		KarotzDescriptor descriptor = (KarotzDescriptor)getDescriptor();
-		descriptor.interactiveIds = reporter().prebuild(build, descriptor);
-		log.log(Level.INFO, "prebuild: saving descriptor "+descriptor.interactiveIds);
+		descriptor.tokenIds = reporter().prebuild(build, descriptor);
+		log.log(Level.INFO, "prebuild: saving descriptor "+descriptor.toString());
 		descriptor.save();
 		return true;
 	}
@@ -51,8 +49,8 @@ public class KarotzNotifier extends Notifier {
 	public boolean perform(AbstractBuild<?, ?> build, Launcher launcher,
 			BuildListener listener) throws InterruptedException, IOException {
 		KarotzDescriptor descriptor = (KarotzDescriptor)getDescriptor();
-		descriptor.interactiveIds = reporter().perform(build, descriptor);
-		log.log(Level.INFO, "preform: saving descriptor "+descriptor.interactiveIds);
+		descriptor.tokenIds = reporter().perform(build, descriptor);
+		log.log(Level.INFO, "preform: saving descriptor "+descriptor.toString());
 		descriptor.save();
 		return true;
 	}
@@ -89,7 +87,7 @@ public class KarotzNotifier extends Notifier {
 
 		private String secretKey;
 
-		private Map<String, String> interactiveIds;
+		private List<String> tokenIds;
 
 		public KarotzDescriptor() {
 			load();
@@ -139,14 +137,20 @@ public class KarotzNotifier extends Notifier {
 			return secretKey;
 		}
 		
-		public Map<String, String> getInteractiveIds() {
-			if(interactiveIds == null){
-				interactiveIds = new HashMap<String, String>();
-				for(String id : installations){
-					interactiveIds.put(id, "");
-				}
+		public List<String> getTokenIds() {
+			if(tokenIds == null){
+				tokenIds = new ArrayList<String>();				
+			}			
+			return tokenIds;
+		}
+		
+		@Override
+		public String toString() {
+			String result = "Tokens: ";
+			for(String token : tokenIds){
+				result += " " + token; 
 			}
-			return interactiveIds;
+			return result;
 		}
 	}
 }
