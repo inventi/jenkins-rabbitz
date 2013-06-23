@@ -62,7 +62,7 @@ public class Mock {
 		}
 
 		public List<String> getTokenIds() {
-			return new ArrayList<String>();
+			return null;
 		}
 	}
 	

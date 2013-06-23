@@ -138,9 +138,6 @@ public class KarotzNotifier extends Notifier {
 		}
 		
 		public List<String> getTokenIds() {
-			if(tokenIds == null){
-				tokenIds = new ArrayList<String>();				
-			}			
 			return tokenIds;
 		}
 		
