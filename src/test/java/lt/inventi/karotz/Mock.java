@@ -44,23 +44,8 @@ public class Mock {
 		}
 	}
 	
-	public static class EmptyDescriptor {
+	public static class EmptyDescriptor extends Descriptor{
 		
-		public String getApiKey() {
-			return "API-KEY";
-		}
-
-		public String getSecretKey() {
-			return "SECRET-KEY";
-		}
-		
-		public List<String> getInstallations() {
-			List<String> list= new ArrayList<String>();
-			list.add("INSTALLATION1");
-			list.add("INSTALLATION2");
-			return list;
-		}
-
 		public List<String> getTokenIds() {
 			return null;
 		}
