@@ -19,24 +19,21 @@
   (testing "correctly maps data"
            (let [build (Mock$Build.)
                  descriptor (Mock$Descriptor.)]
-           (is (= {:api-key "API-KEY"
-                   :secret "SECRET-KEY"
-                   :interactive-ids [["INSTALLATION1" "INTERACTIVE-ID1"]
-                                     ["INSTALLATION2" "INTERACTIVE-ID2"]]
-                   :build build}
-                  (build-data build descriptor)))))
+           (is (= (->build-data "API-KEY" "SECRET-KEY"
+                   [["INSTALLATION1" "INTERACTIVE-ID1"]
+                    ["INSTALLATION2" "INTERACTIVE-ID2"]]
+                   build)
+                  (as-build-data build descriptor)))))
   (testing "correctly maps empty descriptor"
            (let [build (Mock$Build.)
                  descriptor (Mock$EmptyDescriptor.)]
-           (is (= {:api-key "API-KEY"
-                   :secret "SECRET-KEY"
-                   :interactive-ids [["INSTALLATION1" ""]
-                                     ["INSTALLATION2" ""]]
-                   :build build}
-                  (build-data build descriptor))))))
+           (is (= (->build-data "API-KEY" "SECRET-KEY"
+                   [["INSTALLATION1" ""] ["INSTALLATION2" ""]]
+                   build)
+                  (as-build-data build descriptor))))))
 
 
-(def build (build-data (Mock$Build.) (Mock$Descriptor.)))
+(def build (as-build-data (Mock$Build.) (Mock$Descriptor.)))
   
 (deftest test-status
     (testing "failed build"

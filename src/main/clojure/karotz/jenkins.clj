@@ -4,6 +4,8 @@
 
 (def jenkins (Jenkins/getInstance))
 
+(defrecord build-data [api-key secret interactive-ids build])
+
 (defn workspace-path [{build :build}]
   (.. build getWorkspace toURI))
 
@@ -29,7 +31,7 @@
   (= (.getResult build) Result/SUCCESS))
 
 (defn recovered? [build]
-  (let [prev-build (.getPreviousBuild (build :build))]
+  (let [prev-build (.getPreviousBuild (:build build ))]
     (if (nil? prev-build)
       false
       (and (succeed? build) (failed? {:build prev-build})))))
@@ -43,10 +45,10 @@
       token-ids)))
   
 
-(defn build-data [jenkins-build jenkins-descriptor]
+(defn as-build-data [jenkins-build jenkins-descriptor]
   (let [karotz-id (.getInstallations jenkins-descriptor)
         token-ids (token-ids jenkins-descriptor)]
-  (hash-map :api-key (.getApiKey jenkins-descriptor) 
-            :secret (.getSecretKey jenkins-descriptor)            
-            :interactive-ids (reverse (zipmap karotz-id token-ids)) 
-            :build jenkins-build)))
+  (->build-data (.getApiKey jenkins-descriptor)
+           (.getSecretKey jenkins-descriptor)
+           (reverse (zipmap karotz-id token-ids))
+           jenkins-build)))

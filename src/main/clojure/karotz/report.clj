@@ -5,7 +5,10 @@
   (:require [clojure.java.io :as io])
   (:use [karotz.jenkins :as jenkins]
         [karotz.tts :as tts]
-        [karotz.api :as api]))
+        [karotz.api :as api])
+  (:import (java.util.logging Logger Level)))
+
+(def log (Logger/getLogger "lt.inventi.karotz.report"))
 
 (defn tts-media [text build]
   (let [file-location (io/file (jenkins/workspace-path build))
@@ -13,13 +16,15 @@
     (jenkins/file-url (str "ws/" tts-file) build)))
 
 (defn request-for-each [tokens f]
-        (for [[karotz-id :as token] tokens]
-          (f token)))
+        (for [token tokens]
+          (let [new-token (f token)]
+            (.log log Level/INFO (str "sending request: " token " -> " new-token))
+            new-token)))
 
 (defn report-build-state [build message]
   (let [message-text (str (jenkins/build-name build) " " message)
         tts-url (tts-media message-text build)
-        tokens (build :interactive-ids)]
+        tokens (:interactive-ids build)]
     (request-for-each tokens 
                       #(api/say-out-loud (api/sign-in % build) tts-url))))
 
@@ -39,13 +44,13 @@
 
 
 (defn -prebuild [this jenkins-build jenkins-descriptor]
-  (let [build (jenkins/build-data jenkins-build jenkins-descriptor)
-        tokens (build :interactive-ids)]
+  (let [build (jenkins/as-build-data jenkins-build jenkins-descriptor)
+        tokens (:interactive-ids build)]
     (request-for-each tokens
                   #(api/move-ears (api/sign-in % build)))))
 
 (defn -perform [this jenkins-build jenkins-descriptor]
-  (let [build (jenkins/build-data jenkins-build jenkins-descriptor)]
+  (let [build (jenkins/as-build-data jenkins-build jenkins-descriptor)]
     (if (jenkins/failed? build)
         (report-failure build)
       (if (jenkins/recovered? build)
