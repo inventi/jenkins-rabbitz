@@ -67,9 +67,7 @@
 
   ([token left right]
    (let [request-url (str "ears?left=" left "&right=" right "&relative=true")]
-     (do
-       (println request-url)
-       (karotz-request token request-url)))))
+       (karotz-request token request-url))))
 
 (defn say-out-loud [token media-url]
   (let [request-url (str "multimedia?action=play&url="
