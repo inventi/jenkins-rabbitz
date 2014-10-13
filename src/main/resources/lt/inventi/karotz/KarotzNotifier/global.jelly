@@ -1,5 +1,11 @@
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
   <f:section title="Rabbitz settings">
+  <f:entry title="Api key" field="apiKey">
+    <f:textbox />
+  </f:entry>
+  <f:entry title="Secret" field="secretKey">
+    <f:textbox />
+  </f:entry>
     <f:entry title="Karotz installation IDs">
 	 <f:repeatable items="${descriptor.installations}" var="installId">
 	 	<table width="100%">

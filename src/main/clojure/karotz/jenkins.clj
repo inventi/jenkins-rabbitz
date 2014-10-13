@@ -36,14 +36,10 @@
       false
       (and (succeed? build) (failed? {:build prev-build})))))
 
-
 (defn token-ids [jenkins-descriptor]
   (let [token-ids (.getTokenIds jenkins-descriptor)
-        count (count (.getInstallations jenkins-descriptor))]
-    (if (empty? token-ids)
-      (repeat count "")
-      token-ids)))
-  
+        installations (.getInstallations jenkins-descriptor)]
+    (take (count installations) (concat token-ids (repeat "")))))
 
 (defn as-build-data [jenkins-build jenkins-descriptor]
   (let [karotz-id (.getInstallations jenkins-descriptor)
@@ -52,3 +48,4 @@
            (.getSecretKey jenkins-descriptor)
            (reverse (zipmap karotz-id token-ids))
            jenkins-build)))
+

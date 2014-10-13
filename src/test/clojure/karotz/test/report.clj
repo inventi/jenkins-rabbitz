@@ -42,8 +42,8 @@
     (let [build (Mock$Build.)
           descriptor (Mock$Descriptor.)]
     (testing "Perform should work"
-             (is (= ["INTERACTIVE-ID1" "INTERACTIVE-ID2"]
+             (is (= ["INTERACTIVE-ID1" "INTERACTIVE-ID2" "INTERACTIVE-ID2"]
                     (-perform nil build descriptor))))
     (testing "Prebuild should work"
-             (is (= ["INTERACTIVE-ID1" "INTERACTIVE-ID2"]
+             (is (= ["INTERACTIVE-ID1" "INTERACTIVE-ID2" "INTERACTIVE-ID2"]
                     (-prebuild nil build descriptor)))))))

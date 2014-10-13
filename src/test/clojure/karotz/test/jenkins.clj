@@ -21,14 +21,15 @@
                  descriptor (Mock$Descriptor.)]
            (is (= (->build-data "API-KEY" "SECRET-KEY"
                    [["INSTALLATION1" "INTERACTIVE-ID1"]
-                    ["INSTALLATION2" "INTERACTIVE-ID2"]]
+                    ["INSTALLATION2" "INTERACTIVE-ID2"]
+                    ["INSTALLATION3" ""]]
                    build)
                   (as-build-data build descriptor)))))
   (testing "correctly maps empty descriptor"
            (let [build (Mock$Build.)
                  descriptor (Mock$EmptyDescriptor.)]
            (is (= (->build-data "API-KEY" "SECRET-KEY"
-                   [["INSTALLATION1" ""] ["INSTALLATION2" ""]]
+                   [["INSTALLATION1" ""] ["INSTALLATION2" ""] ["INSTALLATION3" ""]]
                    build)
                   (as-build-data build descriptor))))))
 

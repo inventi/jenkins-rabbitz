@@ -33,6 +33,7 @@ public class Mock {
 			List<String> list= new ArrayList<String>();
 			list.add("INSTALLATION1");
 			list.add("INSTALLATION2");
+			list.add("INSTALLATION3");
 			return list;
 		}
 
