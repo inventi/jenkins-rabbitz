@@ -39,9 +39,7 @@ public class KarotzNotifier extends Notifier {
 	@Override
 	public boolean prebuild(AbstractBuild<?, ?> build, BuildListener listener) {
 		KarotzDescriptor descriptor = (KarotzDescriptor)getDescriptor();
-		descriptor.tokenIds = reporter().prebuild(build, descriptor);
-		log.log(Level.INFO, "prebuild: saving descriptor "+descriptor.toString());
-		descriptor.save();
+		reporter().prebuild(build, descriptor);
 		return true;
 	}
 	
@@ -49,9 +47,7 @@ public class KarotzNotifier extends Notifier {
 	public boolean perform(AbstractBuild<?, ?> build, Launcher launcher,
 			BuildListener listener) throws InterruptedException, IOException {
 		KarotzDescriptor descriptor = (KarotzDescriptor)getDescriptor();
-		descriptor.tokenIds = reporter().perform(build, descriptor);
-		log.log(Level.INFO, "preform: saving descriptor "+descriptor.toString());
-		descriptor.save();
+		reporter().perform(build, descriptor);
 		return true;
 	}
 	
@@ -81,13 +77,7 @@ public class KarotzNotifier extends Notifier {
 	public static class KarotzDescriptor extends
 			BuildStepDescriptor<Publisher> {
 
-		private String apiKey;
-
 		private List<String> installations;
-
-		private String secretKey;
-
-		private List<String> tokenIds;
 
 		public KarotzDescriptor() {
 			load();
@@ -109,7 +99,6 @@ public class KarotzNotifier extends Notifier {
 		@Override
 		public boolean configure(StaplerRequest req, JSONObject formData)
 				throws FormException {
-			apiKey = formData.getString("apiKey");
 			installations = new ArrayList<String>();
 			if(formData.get("installId") instanceof JSONArray){
 				JSONArray installs = formData.getJSONArray("installId");
@@ -119,35 +108,13 @@ public class KarotzNotifier extends Notifier {
 			}else{
 				installations.add(formData.getJSONObject("installId").getString("id"));
 			}
-			secretKey = formData.getString("secretKey");
 			save();
 
 			return true;
 		}
 
-		public String getApiKey() {
-			return apiKey;
-		}
-
 		public List<String> getInstallations() {
 			return installations;
-		}
-
-		public String getSecretKey() {
-			return secretKey;
-		}
-		
-		public List<String> getTokenIds() {
-			return tokenIds;
-		}
-		
-		@Override
-		public String toString() {
-			String result = "Tokens: ";
-			for(String token : tokenIds){
-				result += " " + token; 
-			}
-			return result;
 		}
 	}
 }

@@ -1,60 +1,37 @@
 (ns karotz.test.jenkins
-  (:use [karotz.jenkins])
+  (:require [karotz.jenkins :as jenkins])
   (:use [clojure.test])
   (:import
     (lt.inventi.karotz Mock$Build Mock$Descriptor Mock$Jenkins Mock$EmptyDescriptor)))
 
-(deftest test-user-list 
+(deftest test-user-list
          (testing "Forms names list message"
-                  (is (= "testas, testas1, testas2 and testas3" 
-                         (user-list ["testas" "testas1" "testas2" "testas3"]))))
-         
+                  (is (= "testas, testas1, testas2 and testas3"
+                         (jenkins/user-list ["testas" "testas1" "testas2" "testas3"]))))
+
          (testing "Nil for empty list"
-                  (is (nil? (user-list []))))
-         
+                  (is (nil? (jenkins/user-list []))))
+
          (testing "Deduplicates names"
-                  (is (= "test" (user-list `("test" "test" "test"))))))
+                  (is (= "test" (jenkins/user-list `("test" "test" "test"))))))
 
-(deftest data-map
-  (testing "correctly maps data"
-           (let [build (Mock$Build.)
-                 descriptor (Mock$Descriptor.)]
-           (is (= (->build-data "API-KEY" "SECRET-KEY"
-                   [["INSTALLATION1" "INTERACTIVE-ID1"]
-                    ["INSTALLATION2" "INTERACTIVE-ID2"]
-                    ["INSTALLATION3" ""]]
-                   build)
-                  (as-build-data build descriptor)))))
-  (testing "correctly maps empty descriptor"
-           (let [build (Mock$Build.)
-                 descriptor (Mock$EmptyDescriptor.)]
-           (is (= (->build-data "API-KEY" "SECRET-KEY"
-                   [["INSTALLATION1" ""] ["INSTALLATION2" ""] ["INSTALLATION3" ""]]
-                   build)
-                  (as-build-data build descriptor))))))
+(def build (jenkins/as-build-data (Mock$Build.) (Mock$Descriptor.)))
 
-
-(def build (as-build-data (Mock$Build.) (Mock$Descriptor.)))
-  
 (deftest test-status
     (testing "failed build"
-             (is (failed? build)))
+             (is (jenkins/failed? build)))
     (testing "not succeed build"
-             (is (not (succeed? build))))
+             (is (not (jenkins/succeed? build))))
     (testing "recovered"
-             (is (not (recovered? build)))))
+             (is (not (jenkins/recovered? build)))))
 
 (deftest test-geters
   (testing "returns workspace"
            (is (= (.. (Mock$Build.) toURI)
-                  (workspace-path build))))
+                  (jenkins/workspace-path build))))
   (testing "returns build name"
            (is (= (.. (Mock$Build.) getName)
-                  (build-name build))))
+                  (jenkins/build-name build))))
   (testing "returns commitesr"
            (is (= (.. (Mock$Build.) getId)
-                  (commiters-list build))))
-  (testing "file url"
-           (with-redefs [jenkins (Mock$Jenkins.)]
-             (is (= "http://project/test.txt"
-                  (file-url "/test.txt" build))))))
+                  (jenkins/commiters-list build)))))
