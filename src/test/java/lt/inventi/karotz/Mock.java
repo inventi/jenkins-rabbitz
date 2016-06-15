@@ -3,13 +3,9 @@ package lt.inventi.karotz;
 import hudson.model.Result;
 
 import java.io.File;
-import java.net.MalformedURLException;
 import java.net.URI;
-import java.net.URL;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public class Mock {
 	
@@ -20,27 +16,15 @@ public class Mock {
 	}
 	
 	public static class Descriptor {
-		
-		public String getApiKey() {
-			return "API-KEY";
-		}
 
-		public String getSecretKey() {
-			return "SECRET-KEY";
-		}
-		
+		public String accessKey = "ACCESS-KEY";
+		public String secretKey = "SECRET-KEY";
+
 		public List<String> getInstallations() {
 			List<String> list= new ArrayList<String>();
 			list.add("INSTALLATION1");
 			list.add("INSTALLATION2");
 			list.add("INSTALLATION3");
-			return list;
-		}
-
-		public List<String> getTokenIds() {
-			List<String> list= new ArrayList<String>();
-			list.add("INTERACTIVE-ID1");
-			list.add("INTERACTIVE-ID2");
 			return list;
 		}
 	}

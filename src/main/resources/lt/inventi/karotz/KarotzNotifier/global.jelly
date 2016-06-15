@@ -1,5 +1,11 @@
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
   <f:section title="Rabbitz settings">
+    <f:entry title="Ivona Access Key">
+      <f:textbox name="accessKey" value="${descriptor.accessKey}"/>
+    </f:entry>
+    <f:entry title="Ivona Secret Key">
+      <f:textbox name="secretKey" value="${descriptor.secretKey}"/>
+    </f:entry>
     <f:entry title="Karotz IPz">
 	 <f:repeatable items="${descriptor.installations}" var="installId">
 	 	<table width="100%">

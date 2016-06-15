@@ -5,41 +5,52 @@
 
 (def jenkins (Jenkins/getInstance))
 
-(defrecord build-data [karotz build])
+(defrecord Karotz [karotz access-key secret-key])
 
-(defn workspace-path [{build :build}]
-  (.. build getWorkspace toURI))
+(defrecord BuildInfo [build-name failed? succeed? recovered? commiters project-url workspace])
 
-(defn file->url [file {build :build}]
-  (let [target (FilePath. (.. build getWorkspace) "karotz-sayz")]
+(defn file->url [file build]
+  (let [target (FilePath. (:workspace build) "karotz-sayz")]
     (with-open [in (clojure.java.io/input-stream file)]
       (.copyFrom target in))
-    (str (.getRootUrl jenkins) (.. build getProject getUrl) "ws/" (.getName target))))
+    (str (.getRootUrl jenkins) (:project-url build) "ws/" (.getName target))))
 
-(defn build-name [{build :build}]
+(defn- build-name [build]
   (.. build getProject getName))
 
-(defn user-list [user-list]
+(defn- user-list [user-list]
   (let [users (set user-list)]
     (if (< (count users) 2)
       (first users)
       (str (apply str (interpose ", " (butlast users))) " and " (last users)))))
 
-(defn commiters-list [{build :build}]
+(defn- commiters-list [build]
   (user-list (map #(.getId (.getAuthor %)) (.getChangeSet build))))
 
-(defn failed? [{build :build}]
+(defn- failed? [build]
   (= (.getResult build) Result/FAILURE))
 
-(defn succeed? [{build :build}]
+(defn- succeed? [build]
   (= (.getResult build) Result/SUCCESS))
 
-(defn recovered? [build]
-  (let [prev-build (.getPreviousBuild (:build build ))]
+(defn- recovered? [build]
+  (let [prev-build (.getPreviousBuild build)]
     (if (nil? prev-build)
       false
-      (and (succeed? build) (failed? {:build prev-build})))))
+      (and (succeed? build) (failed? prev-build)))))
 
-(defn as-build-data [jenkins-build jenkins-descriptor]
-  (->build-data (.getInstallations jenkins-descriptor) jenkins-build))
+(defn build-info [build]
+  (->BuildInfo
+    (build-name build)
+    (failed? build)
+    (succeed? build)
+    (recovered? build)
+    (commiters-list build)
+    (.. build getProject getUrl)
+    (.. build getWorkspace)))
+
+(defn karotz [descriptor]
+  (->Karotz (.getInstallations descriptor)
+            (.accessKey descriptor)
+            (.secretKey descriptor)))
 

@@ -77,6 +77,9 @@ public class KarotzNotifier extends Notifier {
 	public static class KarotzDescriptor extends
 			BuildStepDescriptor<Publisher> {
 
+		public String accessKey;
+		public String secretKey;
+
 		private List<String> installations;
 
 		public KarotzDescriptor() {
@@ -108,6 +111,10 @@ public class KarotzNotifier extends Notifier {
 			}else{
 				installations.add(formData.getJSONObject("installId").getString("id"));
 			}
+
+			accessKey = formData.getString("accessKey");
+			secretKey = formData.getString("secretKey");
+
 			save();
 
 			return true;

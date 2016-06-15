@@ -11,44 +11,41 @@
 (def log (Logger/getLogger "lt.inventi.karotz.report"))
 
 (defn request-for-each [karotz f]
-        (for [karot karotz]
+        (for [karot (:karotz karotz)]
           (let [result (f karot)]
             (.log log Level/INFO (str "sending request: " result " -> " karot))
             result)))
 
-(defn report-build-state [build message]
-  (let [text (str (jenkins/build-name build) " " message)
-        tts-url (jenkins/file->url (tts/tts->file! text) build)
-        karotz (:karotz build)]
-    (request-for-each karotz
-                      #(api/say-out-loud % tts-url))))
+(defn report-build-state [karotz build message]
+  (let [text (str (:build-name build) " " message)
+        tts-url (jenkins/file->url (tts/tts->file! text karotz) build)]
+    (request-for-each karotz #(api/say-out-loud % tts-url))))
 
 (defn prepare-message [message commiters-message commiter-names]
   (str message (if (empty? commiter-names) ""
                  (str " " commiters-message " " commiter-names))))
 
-(defn report-failure [build]
-  (report-build-state build
+(defn report-failure [karotz build]
+  (report-build-state karotz build
                       (prepare-message "failed." "Last change was made by"
-                                       (jenkins/commiters-list build))))
+                                       (:commiters build))))
 
-(defn report-recovery [build]
-  (report-build-state build
+(defn report-recovery [karotz build]
+  (report-build-state karotz build
                       (prepare-message "is back to normal." "Thanks to"
-                                       (jenkins/commiters-list build))))
+                                       (:commiters build))))
 
 (defn -prebuild [this jenkins-build jenkins-descriptor]
   (dorun
-    (let [build (jenkins/as-build-data jenkins-build jenkins-descriptor)
-          karotz (:karotz build)]
-      (request-for-each karotz
-                        #(api/move-ears %)))))
+    (let [karotz (jenkins/karotz jenkins-descriptor)]
+      (request-for-each karotz #(api/move-ears %)))))
 
 (defn -perform [this jenkins-build jenkins-descriptor]
   (dorun
-    (let [build (jenkins/as-build-data jenkins-build jenkins-descriptor)]
-    (if (jenkins/failed? build)
-        (report-failure build)
-      (if (jenkins/recovered? build)
-          (report-recovery build)
-        (:karotz build))))))
+    (let [build (jenkins/build-info jenkins-build)
+          karotz (jenkins/karotz jenkins-descriptor)]
+    (if (:failed? build)
+        (report-failure karotz build)
+      (if (:recovered? build)
+          (report-recovery karotz build)
+        (:karotz karotz))))))
